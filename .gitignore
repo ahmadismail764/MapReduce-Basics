@@ -1,2 +1,6 @@
 target/
+output/
+output_temp/
+.vscode/
 *.pdf
+g.txt
