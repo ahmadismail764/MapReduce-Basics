@@ -1,0 +1,34 @@
+Q1 Hadoop MapReduce run commands (WSL Ubuntu)
+
+1) Go to project folder
+cd "/mnt/c/organize2/assignments/Big Data/Assignment1/HadoopBasics"
+
+2) Build once
+mvn -DskipTests package
+
+3) Inner Join (Q1.1)
+rm -rf out_inner
+mvn -DskipTests exec:java -Dexec.mainClass=assignment1.InnerJoin -Dexec.args="input_q1.txt out_inner"
+cat out_inner/part-r-00000
+
+4) Full Outer Join (Q1.2)
+rm -rf out_outer
+mvn -DskipTests exec:java -Dexec.mainClass=assignment1.FullOuterJoin -Dexec.args="input_q1.txt out_outer"
+cat out_outer/part-r-00000
+
+5) Set Difference (Q1.3)
+rm -rf out_diff
+mvn -DskipTests exec:java -Dexec.mainClass=assignment1.SetDifference -Dexec.args="input_q1.txt out_diff"
+cat out_diff/part-r-00000
+
+Notes
+- Always delete the output folder before rerunning the same job.
+- The outputs are written relative to the project folder.
+- If using this same project path under WSL, output folders will appear at:
+  /mnt/c/organize2/assignments/Big Data/Assignment1/HadoopBasics/out_inner
+  /mnt/c/organize2/assignments/Big Data/Assignment1/HadoopBasics/out_outer
+  /mnt/c/organize2/assignments/Big Data/Assignment1/HadoopBasics/out_diff
+- The same folders are visible in Windows Explorer at:
+  C:\organize2\assignments\Big Data\Assignment1\HadoopBasics\out_inner
+  C:\organize2\assignments\Big Data\Assignment1\HadoopBasics\out_outer
+  C:\organize2\assignments\Big Data\Assignment1\HadoopBasics\out_diff
