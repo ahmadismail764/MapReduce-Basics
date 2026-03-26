@@ -10,3 +10,10 @@ output_temp/
 *.pdf
 g.txt
 .idea
+
+my wd.txt
+
+# Assignment generated outputs
+q*_output/
+q*_output_temp/
+out_*/
