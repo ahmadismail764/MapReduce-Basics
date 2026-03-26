@@ -13,12 +13,16 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 public class SetDifference {
+    private static final String TABLE_1 = "T1";
+    private static final String TABLE_2 = "T2";
 
     public static class SetDifferenceMapper extends Mapper<LongWritable, Text, Text, Text> {
         private final Text outKey = new Text();
-        private final Text outValue = new Text();
+        private final Text outVal = new Text();
 
         private String[] parseRecord(String line) {
             String cleaned = line.replaceAll("[()]", "").trim();
@@ -32,6 +36,12 @@ public class SetDifference {
             return new String[] { parts[0].trim(), parts[1].trim(), parts[2].trim() };
         }
 
+        private void emit(Context context, String key, String sourceTag) throws IOException, InterruptedException {
+            outKey.set(key);
+            outVal.set(sourceTag);
+            context.write(outKey, outVal);
+        }
+
         @Override
         public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
             String[] record = parseRecord(value.toString());
@@ -43,35 +53,30 @@ public class SetDifference {
             String pk = record[1];
             String attr = record[2];
 
-            if ("T1".equalsIgnoreCase(table)) {
-                outKey.set(pk);
-                outValue.set("T1");
-                context.write(outKey, outValue);
-            } else if ("T2".equalsIgnoreCase(table)) {
+            if (TABLE_1.equalsIgnoreCase(table)) {
+                emit(context, pk, TABLE_1);
+                return;
+            }
+
+            if (TABLE_2.equalsIgnoreCase(table)) {
                 // In T2(A3, A1), the third field stores A1.
-                outKey.set(attr);
-                outValue.set("T2");
-                context.write(outKey, outValue);
+                emit(context, attr, TABLE_2);
             }
         }
     }
 
     public static class SetDifferenceReducer extends Reducer<Text, Text, Text, NullWritable> {
+        private boolean isOnlyInT1(Iterable<Text> values) {
+            Set<String> sources = new HashSet<>();
+            for (Text value : values) {
+                sources.add(value.toString());
+            }
+            return sources.contains(TABLE_1) && !sources.contains(TABLE_2);
+        }
+
         @Override
         public void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
-            boolean inT1 = false;
-            boolean inT2 = false;
-
-            for (Text value : values) {
-                String source = value.toString();
-                if ("T1".equals(source)) {
-                    inT1 = true;
-                } else if ("T2".equals(source)) {
-                    inT2 = true;
-                }
-            }
-
-            if (inT1 && !inT2) {
+            if (isOnlyInT1(values)) {
                 context.write(key, NullWritable.get());
             }
         }
@@ -81,6 +86,8 @@ public class SetDifference {
 
         if (args.length != 2) {
             System.err.println("Usage: SetDifference <in_path> <out_path>");
+            System.err.println("Example: SetDifference input/ output/");
+            System.err.println("Note: Output directory must not exist before running the job.");
             System.exit(-1);
         }
 
@@ -88,8 +95,6 @@ public class SetDifference {
         conf.set("mapreduce.framework.name", "local");
         conf.set("fs.defaultFS", "file:///");
         conf.set("mapreduce.app-submission.cross-platform", "true");
-
-
 
         Job job = Job.getInstance(conf, "Set Difference A1[T1] - A1[T2]");
         job.setJarByClass(SetDifference.class);

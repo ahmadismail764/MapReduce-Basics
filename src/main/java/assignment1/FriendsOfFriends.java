@@ -103,7 +103,9 @@ public class FriendsOfFriends {
     public static void main(String[] args) throws Exception {
         if (args.length < 2 || args.length > 3) {
             System.err.println("Usage: FriendsOfFriends <in_path> <out_path> [person_id]");
-            System.err.println("  person_id (optional): Filter results for a specific person (e.g., P1)");
+            System.err.println("person_id (optional): Filter results for a specific person (e.g., P1)");
+            System.err.println("Example: FriendsOfFriends input/ output/ P1");
+            System.err.println("Note: Output directory must not exist before running the job.");
             System.exit(-1);
         }
 
@@ -114,8 +116,6 @@ public class FriendsOfFriends {
         conf.set("mapreduce.framework.name", "local");
         conf.set("fs.defaultFS", "file:///");
         conf.set("mapreduce.app-submission.cross-platform", "true");
-        // Set hadoop.home.dir to prevent Windows bin directory issues
-        System.setProperty("hadoop.home.dir", "C:\\hadoop");
 
         // Set optional filter person
         if (args.length == 3) {

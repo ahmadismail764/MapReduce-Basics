@@ -13,30 +13,14 @@ import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 
 import java.io.IOException;
 
-/**
- * Question 3 – Sort key/value pairs stored on HDFS by key, using Hadoop's
- * built-in sorting mechanism (the MapReduce shuffle/sort phase).
- *
- * Input format  : one "key<TAB>value" (or "key value") per line
- * Output format : lines sorted ascending by key
- *
- * Hadoop guarantees that the reduce phase receives keys in sorted order.
- * We exploit that by using an identity mapper and a single reducer that
- * simply writes every key/value pair it receives – they arrive already sorted.
- *
- * Usage:
- *   HadoopSort <input_path> <output_path>
- */
+
 public class HadoopSort {
 
-    /**
-     * Identity mapper: parse each line as "key\tvalue" (or "key value") and
-     * emit (key, value) so that Hadoop's shuffle/sort sorts by key for us.
-     */
+  
     public static class SortMapper extends Mapper<LongWritable, Text, Text, Text> {
 
         private final Text outKey   = new Text();
-        private final Text outValue = new Text();
+        private final Text outVal = new Text();
 
         @Override
         public void map(LongWritable offset, Text line, Context context)
@@ -57,37 +41,30 @@ public class HadoopSort {
 
             if (parts.length == 2) {
                 outKey.set(parts[0].trim());
-                outValue.set(parts[1].trim());
+                outVal.set(parts[1].trim());
             } else {
                 // Treat the whole line as the key with an empty value
                 outKey.set(text);
-                outValue.set("");
+                outVal.set("");
             }
 
-            context.write(outKey, outValue);
+            context.write(outKey, outVal);
         }
     }
 
-    /**
-     * No custom reducer required – we rely on the identity reducer behaviour.
-     * Hadoop automatically sorts by key before delivering records to the reducer,
-     * so we only need to emit each key/value pair exactly as it arrives.
-     *
-     * We still declare an explicit reducer class so the job is self-contained
-     * and easy to read.
-     */
+    
     public static class SortReducer
             extends org.apache.hadoop.mapreduce.Reducer<Text, Text, Text, Text> {
 
-        private final Text outValue = new Text();
+        private final Text outVal = new Text();
 
         @Override
         public void reduce(Text key, Iterable<Text> values, Context context)
                 throws IOException, InterruptedException {
 
             for (Text val : values) {
-                outValue.set(val.toString());
-                context.write(key, outValue);
+                outVal.set(val.toString());
+                context.write(key, outVal);
             }
         }
     }
@@ -96,6 +73,8 @@ public class HadoopSort {
 
         if (args.length != 2) {
             System.err.println("Usage: HadoopSort <input_path> <output_path>");
+            System.err.println("Example: HadoopSort input/ output/");
+            System.err.println("Note: Output directory must not exist before running the job.");
             System.exit(-1);
         }
 
