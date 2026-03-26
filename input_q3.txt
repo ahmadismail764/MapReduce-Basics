@@ -1,0 +1,7 @@
+banana	fruit
+apple	fruit
+cherry	fruit
+date	fruit
+elderberry	fruit
+fig	fruit
+grape	fruit
